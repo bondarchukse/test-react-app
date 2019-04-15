@@ -1,3 +1,4 @@
+import { findIndex } from 'lodash';
 import update from 'immutability-helper';
 
 const duckRoot = 'app/groceries/';
@@ -35,13 +36,7 @@ export const initialState = {
       deliveryMethod: 'Ground',
     },
   ],
-  isItemSelected: false,
-  selectedItem: {
-    id: 0,
-    name: '',
-    category: '',
-    deliveryMethod: '',
-  },
+  selectedItem: null,
 };
 
 // Reducers
@@ -50,21 +45,39 @@ export default function reducer(state = initialState, action) {
 
   switch (type) {
     case ADD_ITEM:
+    {
       return update(state, {
         list: { $push: [payload] },
       });
-
+    }
+    
     case REMOVE_ITEM:
-      // Write a custom reducer that will remove an item from the list array
-      return state; 
-
+    {
+      const index = findIndex(state.list, payload);
+      if (index < 0) {
+        return state;
+      }
+      
+      const { selectedItem } = state;
+      
+      return update(state, {
+        list: { $splice: [[index, 1]] },
+        selectedItem: { $set: selectedItem === payload ? null : selectedItem }
+      });
+    }
+    
     case SELECT_ITEM:
-      // Write a custom reducer that will select an item
-      return state;
-
-    case DESELECT_ITEM:
-      // Write a customer reducer that will deselect an item
-      return state;
+    {
+      if (payload) {
+        return update(state, {
+          selectedItem: { $set: payload },
+        });
+      }
+  
+      return update(state, {
+        selectedItem: { $set: null },
+      });
+    }
 
     default:
       return state;
@@ -74,5 +87,15 @@ export default function reducer(state = initialState, action) {
 // Action Creators
 export const addItem = item => ({
   type: ADD_ITEM,
+  payload: item,
+});
+
+export const selectItem = item => ({
+  type: SELECT_ITEM,
+  payload: item,
+});
+
+export const removeItem = item => ({
+  type: REMOVE_ITEM,
   payload: item,
 });
